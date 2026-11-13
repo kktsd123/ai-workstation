@@ -38,18 +38,16 @@
   }
   /* 三层视差光晕：远景雾 / 近景暖核 / 亮点 */
   #g1,#g2,#g3{position:fixed;left:0;top:0;border-radius:50%;pointer-events:none;z-index:0;
-    transform:translate(-50%,-50%);will-change:transform;opacity:0;transition:opacity 1s var(--ease)}
+    transform:translate(-50%,-50%);will-change:transform;opacity:1;transition:opacity 1s var(--ease)}
   #g1{width:820px;height:820px;
-    background:radial-gradient(circle,rgba(232,169,131,.13) 0%,rgba(73,50,85,.12) 40%,transparent 72%);
+    background:radial-gradient(circle,rgba(232,169,131,.16) 0%,rgba(73,50,85,.14) 40%,transparent 72%);
     filter:blur(46px)}
   #g2{width:320px;height:320px;
-    background:radial-gradient(circle,rgba(244,208,174,.26) 0%,rgba(232,169,131,.12) 45%,transparent 70%);
+    background:radial-gradient(circle,rgba(244,208,174,.34) 0%,rgba(232,169,131,.12) 45%,transparent 70%);
     filter:blur(12px);mix-blend-mode:screen;transition:opacity 1s var(--ease),transform .35s var(--ease),width .45s var(--ease),height .45s var(--ease)}
   #g3{width:7px;height:7px;background:#ffeede;mix-blend-mode:screen;
     box-shadow:0 0 14px 4px rgba(232,169,131,.85),0 0 46px 14px rgba(232,169,131,.30)}
   #g2.hot{width:420px;height:420px}
-  @media(hover:hover){#g1,#g2,#g3{opacity:1}}
-  @media(hover:none),(pointer:coarse){#g1,#g2,#g3{display:none}}
   @media(prefers-reduced-motion:reduce){#g2{transition:none}}
 
   /* 焦点可见 —— 上一版漏掉的硬伤 */
@@ -279,16 +277,34 @@
   <span>2026 · 个人项目</span>
 </footer>
 
-<script>
-try{
-/* ---------- 自定义指针 ---------- */
+<div class="player collapsed" id="player">
+  <div class="p-body">
+    <div class="p-head">
+      <div class="p-note">♪</div>
+      <div class="p-meta">
+        <div class="p-title" id="pTitle">春よ、来い</div>
+        <div class="p-artist" id="pArtist">Musicbox Collection</div>
+      </div>
+      <button class="p-min" id="pMin" aria-label="收起播放器">—</button>
+    </div>
+    <div class="p-bar" id="pBar"><div class="p-fill" id="pFill"></div></div>
+    <div class="p-ctrl">
+      <button class="p-btn" id="pPrev" aria-label="上一首">⏮</button>
+      <button class="p-btn p-play" id="pPlay" aria-label="播放">▶</button>
+      <button class="p-btn" id="pNext" aria-label="下一首">⏭</button>
+      <div class="p-vol">
+        <input type="range" id="pVol" min="0" max="100" value="55" aria-label="音量" />
+        <span id="pVolTxt">55</span>
+      </div>
+    </div>
+    <div class="p-list" id="pList"></div>
+  </div>
+  <button class="p-toggle" id="pToggle" aria-label="打开播放器">♪</button>
+</div>
 
-  const hot='a,button,.card,.p-item,.p-bar,.p-vol input';
-  addEventListener('mouseover',e=>{ if(e.target.closest(hot)) ring.classList.add('hot'); },{passive:true});
-  addEventListener('mouseout',e=>{ if(e.target.closest(hot)) ring.classList.remove('hot'); },{passive:true});
-  addEventListener('mousedown',()=>ring.classList.add('down'));
-  addEventListener('mouseup',()=>ring.classList.remove('down'));
-})();
+<audio id="pAudio" preload="none"></audio>
+
+<script>
 
 /* ---------- 播放器 ---------- */
 (function(){
@@ -369,11 +385,11 @@ const climax=document.getElementById('climax');
 new IntersectionObserver(es=>{es.forEach(e=>climax.classList.toggle('in',e.isIntersecting));},{threshold:.45}).observe(climax);
 
 const g1=document.getElementById('g1'), g2=document.getElementById('g2'), g3=document.getElementById('g3');
-let mx=-999,my=-999;
-let p1={x:-999,y:-999}, p2={x:-999,y:-999}, p3={x:-999,y:-999};
+let mx=innerWidth/2,my=innerHeight/2;
+let p1={x:innerWidth/2,y:innerHeight/2}, p2={x:innerWidth/2,y:innerHeight/2}, p3={x:innerWidth/2,y:innerHeight/2};
 addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;},{passive:true});
 (function glowLoop(){
-  if(mx>-900){
+  if(true){
     p1.x+=(mx-p1.x)*0.045; p1.y+=(my-p1.y)*0.045;   // 远景雾，最慢
     p2.x+=(mx-p2.x)*0.13;  p2.y+=(my-p2.y)*0.13;    // 暖核，中速
     p3.x+=(mx-p3.x)*0.38;  p3.y+=(my-p3.y)*0.38;    // 亮点，跟手
@@ -394,34 +410,8 @@ document.querySelectorAll('.card').forEach(c=>{
   },{passive:true});
 });
 document.body.classList.add("js");
-}catch(err){ console.error("init failed:",err); }
 </script>
-<div class="player collapsed" id="player">
-  <div class="p-body">
-    <div class="p-head">
-      <div class="p-note">♪</div>
-      <div class="p-meta">
-        <div class="p-title" id="pTitle">春よ、来い</div>
-        <div class="p-artist" id="pArtist">Musicbox Collection</div>
-      </div>
-      <button class="p-min" id="pMin" aria-label="收起播放器">—</button>
-    </div>
-    <div class="p-bar" id="pBar"><div class="p-fill" id="pFill"></div></div>
-    <div class="p-ctrl">
-      <button class="p-btn" id="pPrev" aria-label="上一首">⏮</button>
-      <button class="p-btn p-play" id="pPlay" aria-label="播放">▶</button>
-      <button class="p-btn" id="pNext" aria-label="下一首">⏭</button>
-      <div class="p-vol">
-        <input type="range" id="pVol" min="0" max="100" value="55" aria-label="音量" />
-        <span id="pVolTxt">55</span>
-      </div>
-    </div>
-    <div class="p-list" id="pList"></div>
-  </div>
-  <button class="p-toggle" id="pToggle" aria-label="打开播放器">♪</button>
-</div>
 
-<audio id="pAudio" preload="none"></audio>
 
 </body>
 </html>
