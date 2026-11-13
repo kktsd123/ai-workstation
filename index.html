@@ -148,6 +148,11 @@
     backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
     transition:width .4s var(--ease),height .4s var(--ease),border-radius .4s,padding .4s}
   .player.collapsed{width:56px;height:56px;padding:0;border-radius:50%;overflow:hidden}
+  .player.collapsed.playing{animation:ballPulse 2.4s ease-in-out infinite}
+  @keyframes ballPulse{
+    0%,100%{box-shadow:0 0 0 0 rgba(232,169,131,.55),0 20px 40px -18px rgba(0,0,0,.9)}
+    50%{box-shadow:0 0 0 12px rgba(232,169,131,0),0 20px 40px -18px rgba(0,0,0,.9)}
+  }
   .player.collapsed .p-body{display:none}
   .p-toggle{all:unset;cursor:pointer;position:absolute;right:0;bottom:0;width:56px;height:56px;border-radius:50%;
     display:none;align-items:center;justify-content:center;color:var(--amber);font-size:18px}
@@ -418,8 +423,8 @@
   document.getElementById('pPrev').addEventListener('click',()=>next(-1));
   elList.addEventListener('click',e=>{ const it=e.target.closest('.p-item'); if(it){ idx=+it.dataset.i; load(true); } });
   au.addEventListener('ended',()=>next(1));
-  au.addEventListener('play',()=>elPlay.textContent='⏸');
-  au.addEventListener('pause',()=>elPlay.textContent='▶');
+  au.addEventListener('play',()=>{ elPlay.textContent='⏸'; player.classList.add('playing'); });
+  au.addEventListener('pause',()=>{ elPlay.textContent='▶'; player.classList.remove('playing'); });
   // 进度条：点一下跳到那个位置，也可以按住拖（鼠标和手指都管用）
   function seekTo(clientX){
     const rect = elBar.getBoundingClientRect();
@@ -460,18 +465,19 @@
   /* 点击任意处开始：浏览器禁止无声自动播放，只能借一次点击解锁，
      解锁之后全程自动连播，读者不用再点任何东西 */
   const gate=document.getElementById('autoplayGate');
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.matchMedia('(display-mode: fullscreen)').matches
+    || window.matchMedia('(display-mode: minimal-ui)').matches
+    || window.navigator.standalone === true;
   if(isStandalone){
-    /* 已经从主屏幕打开（PWA）：Chrome 官方允许这种情况有声自动播放，
-       直接开局，不给读者看那一下点击 */
+    /* 从主屏幕图标打开（PWA）：Chrome 官方允许有声自动播放，
+       直接开局。播放器保持小圆球，不占位置。 */
     if(gate) gate.classList.add('hide');
-    player.classList.remove('collapsed');
     ready=true;
     load(true);
   } else if(gate){
     gate.addEventListener('click',()=>{
       gate.classList.add('hide');
-      player.classList.remove('collapsed');
       ready=true;
       if(!au.src) load(true);
       else if(au.paused) au.play().catch(()=>{});
