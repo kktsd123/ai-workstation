@@ -120,19 +120,6 @@
 
   footer{border-top:1px solid var(--line);padding:32px clamp(20px,5vw,60px);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--ink-dim);letter-spacing:.06em}
 
-  /* ---------- 自定义指针 ---------- */
-  @media (hover:hover) and (pointer:fine){
-    body{cursor:none}
-    a,button,label,.card,.p-item,.p-bar{cursor:none}
-    #cur-dot,#cur-ring{position:fixed;left:0;top:0;pointer-events:none;z-index:9999;border-radius:50%;
-      transform:translate(-50%,-50%);will-change:transform}
-    #cur-dot{width:5px;height:5px;background:var(--amber);box-shadow:0 0 10px 1px rgba(232,169,131,.9)}
-    #cur-ring{width:30px;height:30px;border:1px solid rgba(232,169,131,.5);transition:width .28s var(--ease),height .28s var(--ease),border-color .28s,background .28s}
-    #cur-ring.hot{width:58px;height:58px;border-color:rgba(244,208,174,.9);background:rgba(232,169,131,.09)}
-    #cur-ring.down{width:20px;height:20px}
-  }
-  @media (hover:none),(pointer:coarse){ #cur-dot,#cur-ring{display:none} }
-
   /* ---------- 播放器 ---------- */
   .player{position:fixed;right:clamp(14px,3vw,30px);bottom:clamp(14px,3vw,30px);z-index:80;
     width:min(336px,calc(100vw - 28px));border-radius:20px;padding:16px 18px 14px;
@@ -142,7 +129,7 @@
     transition:width .4s var(--ease),height .4s var(--ease),border-radius .4s,padding .4s}
   .player.collapsed{width:56px;height:56px;padding:0;border-radius:50%;overflow:hidden}
   .player.collapsed .p-body{display:none}
-  .p-toggle{all:unset;cursor:none;position:absolute;right:0;bottom:0;width:56px;height:56px;border-radius:50%;
+  .p-toggle{all:unset;cursor:pointer;position:absolute;right:0;bottom:0;width:56px;height:56px;border-radius:50%;
     display:none;align-items:center;justify-content:center;color:var(--amber);font-size:18px}
   .player.collapsed .p-toggle{display:flex}
   .p-toggle:hover{background:rgba(232,169,131,.12)}
@@ -151,17 +138,17 @@
   .p-meta{min-width:0;flex:1}
   .p-title{font-family:var(--serif);font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
   .p-artist{font-size:10.5px;color:var(--ink-dim);letter-spacing:.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .p-min{all:unset;cursor:none;width:22px;height:22px;display:grid;place-items:center;color:var(--ink-dim);font-size:14px;border-radius:50%}
+  .p-min{all:unset;cursor:pointer;width:22px;height:22px;display:grid;place-items:center;color:var(--ink-dim);font-size:14px;border-radius:50%}
   .p-min:hover{color:var(--cream)}
   .p-bar{height:3px;border-radius:3px;background:rgba(255,255,255,.09);margin:8px 0 10px;overflow:hidden}
   .p-fill{height:100%;width:0;background:linear-gradient(90deg,var(--cream),var(--amber));border-radius:3px}
   .p-ctrl{display:flex;align-items:center;gap:12px}
-  .p-btn{all:unset;cursor:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;color:var(--ink);transition:background .3s,color .3s}
+  .p-btn{all:unset;cursor:pointer;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;color:var(--ink);transition:background .3s,color .3s}
   .p-btn:hover{background:rgba(232,169,131,.12);color:var(--cream)}
   .p-play{width:38px;height:38px;background:var(--amber);color:#1a1206}
   .p-play:hover{background:var(--cream);color:#1a1206}
   .p-vol{margin-left:auto;display:flex;align-items:center;gap:8px}
-  .p-vol input{-webkit-appearance:none;appearance:none;width:62px;height:3px;border-radius:3px;background:rgba(255,255,255,.14);outline:none;cursor:none}
+  .p-vol input{-webkit-appearance:none;appearance:none;width:62px;height:3px;border-radius:3px;background:rgba(255,255,255,.14);outline:none;cursor:pointer}
   .p-vol input::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:10px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px rgba(232,169,131,.8)}
   .p-list{margin-top:10px;border-top:1px solid var(--line);padding-top:8px;max-height:132px;overflow:auto}
   .p-item{display:flex;gap:8px;align-items:center;padding:6px 4px;border-radius:8px;font-size:12px;color:var(--ink-dim);transition:background .25s,color .25s}
@@ -284,17 +271,7 @@
 <script>
 try{
 /* ---------- 自定义指针 ---------- */
-(function(){
-  const dot=document.getElementById('cur-dot'), ring=document.getElementById('cur-ring');
-  if(!dot||!ring) return;
-  if(matchMedia('(hover:none),(pointer:coarse)').matches) return;
-  let mx=innerWidth/2,my=innerHeight/2,rx=mx,ry=my;
-  addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;dot.style.transform='translate(-50%,-50%) translate('+mx+'px,'+my+'px)';},{passive:true});
-  (function loop(){
-    rx+=(mx-rx)*0.18; ry+=(my-ry)*0.18;
-    ring.style.transform='translate(-50%,-50%) translate('+rx+'px,'+ry+'px)';
-    requestAnimationFrame(loop);
-  })();
+
   const hot='a,button,.card,.p-item,.p-bar,.p-vol input';
   addEventListener('mouseover',e=>{ if(e.target.closest(hot)) ring.classList.add('hot'); },{passive:true});
   addEventListener('mouseout',e=>{ if(e.target.closest(hot)) ring.classList.remove('hot'); },{passive:true});
@@ -397,9 +374,6 @@ document.querySelectorAll('.card').forEach(c=>{
 document.body.classList.add("js");
 }catch(err){ console.error("init failed:",err); }
 </script>
-<div id="cur-dot"></div>
-<div id="cur-ring"></div>
-
 <div class="player collapsed" id="player">
   <div class="p-body">
     <div class="p-head">
