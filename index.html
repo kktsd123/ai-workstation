@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>随心 · 夜里的工作站</title>
+<meta name="description" content="用 DeepSeek Harness 和 Obsidian 搭起来的一套个人工作流：收进来、理清楚、写出去。" />
+<meta property="og:title" content="随心 · 夜里的工作站" />
+<meta property="og:description" content="把每一天的输入，酿成能交付的东西。" />
+<meta property="og:image" content="assets/cat.jpg" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0e1a'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23e8a983'/%3E%3C/svg%3E" />
+<style>
+  :root{
+    --bg:#080b14; --bg-2:#0e1222;
+    --ink:#f7efe4; --ink-dim:#a49db2;
+    --amber:#e8a983; --amber-deep:#b66e6c; --cream:#f4d0ae;
+    --plum:#493255;
+    --line:rgba(232,169,131,.14);
+    --line-hi:rgba(232,169,131,.34);
+    --serif:"Songti SC","Source Han Serif SC","Noto Serif SC",Georgia,serif;
+    --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.75;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+  /* 氛围层：不做纯黑，避免 OLED 拖影 */
+  .sky{position:fixed;inset:0;z-index:-3;pointer-events:none;
+    background:
+      radial-gradient(820px 560px at 82% -8%, rgba(73,50,85,.5), transparent 62%),
+      radial-gradient(680px 460px at 8% 4%, rgba(20,28,58,.85), transparent 66%),
+      radial-gradient(1200px 700px at 50% 108%, rgba(232,169,131,.09), transparent 62%),
+      linear-gradient(180deg,#0a0e1a,#080b14 52%,#0b0d18);
+  }
+  .noise{position:fixed;inset:0;z-index:-2;pointer-events:none;opacity:.045;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
+  }
+  .light{position:fixed;width:560px;height:560px;border-radius:50%;pointer-events:none;z-index:-1;
+    background:radial-gradient(circle,rgba(232,169,131,.09),transparent 64%);
+    transform:translate(-50%,-50%);opacity:0;transition:opacity .8s}
+  @media(hover:hover){.light{opacity:1}}
+
+  /* 焦点可见 —— 上一版漏掉的硬伤 */
+  a:focus-visible,button:focus-visible{outline:2px solid var(--amber);outline-offset:4px;border-radius:4px}
+
+  nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+    padding:20px clamp(20px,5vw,60px);transition:background .5s var(--ease),border-color .5s;
+    border-bottom:1px solid transparent;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+  nav.solid{background:rgba(8,11,20,.82);border-bottom-color:var(--line)}
+  .brand{display:flex;align-items:center;gap:10px;font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-dim)}
+  .brand i{width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 12px 2px rgba(232,169,131,.8);display:block}
+  .navlinks{display:flex;gap:28px;font-size:13px}
+  .navlinks a{color:var(--ink-dim);text-decoration:none;transition:color .3s}
+  .navlinks a:hover{color:var(--cream)}
+  @media(max-width:760px){.navlinks{display:none}}
+
+  main{position:relative;z-index:1}
+  section{padding:clamp(58px,7vw,100px) clamp(20px,5vw,60px)}
+  .wrap{max-width:1140px;margin:0 auto}
+  .sep{border-top:1px solid var(--line)}
+  .eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:11.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--amber);margin-bottom:24px}
+  .eyebrow::before{content:"";width:24px;height:1px;background:linear-gradient(90deg,transparent,var(--amber))}
+  h2{font-family:var(--serif);font-weight:400;font-size:clamp(28px,3.4vw,42px);line-height:1.28}
+  h2 em{font-style:normal;color:var(--cream)}
+  .lede{color:var(--ink-dim);font-size:clamp(15px,1.3vw,16.5px);max-width:36em}
+
+  /* 首屏：图缩为配角，与标题形成对角张力 */
+  .hero{min-height:100svh;display:grid;grid-template-columns:minmax(0,1.18fr) minmax(0,.82fr);gap:clamp(28px,4vw,56px);align-items:center;padding-top:clamp(100px,12vh,148px);padding-bottom:36px}
+  @media(max-width:900px){.hero{grid-template-columns:1fr;min-height:auto;padding-top:126px}}
+  .hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(36px,5.4vw,68px);line-height:1.14;text-wrap:balance;letter-spacing:-.015em;margin-bottom:28px}
+  .hero h1 em{font-style:normal;display:inline-block;background:linear-gradient(104deg,var(--cream),var(--amber) 46%,var(--amber-deep));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .lede{margin-bottom:38px}
+  .stats{display:flex;flex-wrap:wrap;gap:clamp(20px,3.6vw,44px);padding-top:26px;border-top:1px solid var(--line)}
+  .stat b{display:block;font-family:var(--serif);font-size:clamp(22px,2.4vw,30px);font-weight:400;color:var(--cream);line-height:1.25}
+  .stat span{font-size:12px;color:var(--ink-dim);letter-spacing:.1em}
+
+  .portrait{position:relative;display:flex;justify-content:center;align-items:center}
+  .portrait::before{content:"";position:absolute;inset:6%;border-radius:50%;background:radial-gradient(circle,rgba(232,169,131,.24),transparent 62%);filter:blur(38px)}
+  .portrait img{position:relative;width:100%;max-width:270px;border-radius:24px;border:1px solid rgba(244,208,174,.2);
+    box-shadow:0 36px 80px -28px rgba(0,0,0,.92);animation:float 10s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .caption{margin-top:16px;text-align:center;font-size:11.5px;color:var(--ink-dim);letter-spacing:.2em}
+
+  /* 视觉高潮：巨型引言 */
+  .climax{padding:clamp(72px,9vw,116px) clamp(20px,5vw,60px);text-align:center;position:relative;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .climax p{font-family:var(--serif);font-size:clamp(30px,6vw,84px);line-height:1.16;letter-spacing:-.02em;
+    color:transparent;-webkit-text-stroke:1px rgba(244,208,174,.55);transition:color 1.2s var(--ease),-webkit-text-stroke-color 1.2s var(--ease)}
+  .climax.in p{color:rgba(244,208,174,.94);-webkit-text-stroke-color:transparent}
+  .climax small{display:block;margin-top:26px;font-family:var(--sans);font-size:13px;letter-spacing:.26em;color:var(--amber);text-transform:uppercase}
+
+  /* 卡片：一张大卡 + 三张竖卡，打破等分网格 */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:54px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .card{position:relative;padding:32px 30px 34px;border-radius:16px;overflow:hidden;
+    background:linear-gradient(158deg,rgba(255,255,255,.05),rgba(255,255,255,.012));
+    border:1px solid var(--line);transition:transform .6s var(--ease),border-color .6s,box-shadow .6s}
+  .card::after{content:"";position:absolute;inset:0;border-radius:16px;opacity:0;transition:opacity .6s;pointer-events:none;
+    background:radial-gradient(400px 190px at var(--mx,50%) var(--my,0%),rgba(232,169,131,.14),transparent 72%)}
+  .card:hover{transform:translateY(-5px);border-color:var(--line-hi);box-shadow:0 24px 56px -32px rgba(0,0,0,.92)}
+  .card:hover::after{opacity:1}
+  .card.wide{grid-column:span 3;display:grid;grid-template-columns:120px 1fr;gap:clamp(18px,3vw,40px);align-items:center;padding:38px 36px}
+  @media(max-width:820px){.card.wide{grid-column:span 1;grid-template-columns:1fr;padding:32px 30px}}
+  .num{font-family:var(--serif);font-size:clamp(34px,4.4vw,54px);line-height:1;color:transparent;-webkit-text-stroke:1px var(--line-hi);letter-spacing:.02em}
+  .card h3{font-family:var(--serif);font-weight:400;font-size:21px;margin-bottom:10px;margin-top:14px}
+  .card.wide h3{margin-top:0}
+  .card p{color:var(--ink-dim);font-size:14.5px}
+
+  .roadmap-marker{}
+.timeline{margin-top:56px;border-left:1px solid var(--line);padding-left:32px}
+  .row{position:relative;padding:16px 0}
+  .row::before{content:"";position:absolute;left:-37px;top:28px;width:8px;height:8px;border-radius:50%;background:var(--bg);border:1px solid var(--line-hi);transition:all .5s}
+  .row.done::before{background:var(--amber);border-color:var(--amber);box-shadow:0 0 14px rgba(232,169,131,.85)}
+  .row time{font-size:11.5px;letter-spacing:.18em;color:var(--amber);text-transform:uppercase}
+  .row p{color:var(--ink-dim);font-size:15px;margin-top:3px}
+
+  .closing{text-align:center}
+  .closing h2{font-size:clamp(30px,4.2vw,52px);margin-bottom:16px}
+  .closing p{color:var(--ink-dim);max-width:30em;margin:0 auto}
+
+  footer{border-top:1px solid var(--line);padding:32px clamp(20px,5vw,60px);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--ink-dim);letter-spacing:.06em}
+
+  body.js .reveal{opacity:0;transform:translateY(24px);transition:opacity 1s var(--ease),transform 1s var(--ease)}
+  body.js .reveal.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){
+    .reveal{opacity:1;transform:none;transition:none}
+    .portrait img{animation:none}
+    .climax p{transition:none;color:rgba(244,208,174,.94);-webkit-text-stroke-color:transparent}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+<div class="sky"></div>
+<div class="noise"></div>
+<div class="light" id="light"></div>
+
+<nav id="nav">
+  <div class="brand"><i></i>随心 · 工作站</div>
+  <div class="navlinks">
+    <a href="#flow">流程</a>
+    <a href="#plan">路线</a>
+    <a href="#end">关于</a>
+  </div>
+</nav>
+
+<main>
+  <section class="hero wrap">
+    <div class="reveal">
+      <div class="eyebrow">Personal AI Workstation</div>
+      <h1>把每一天的输入，<br><em>酿成能交付的东西</em></h1>
+      <p class="lede">用 DeepSeek Harness 和 Obsidian 搭起来的一套工作流。收进来、理清楚、写出去——它每天自己跑一遍，不需要人盯着。</p>
+      <div class="stats">
+        <div class="stat"><b>13</b><span>个目录</span></div>
+        <div class="stat"><b>2</b><span>条流水线</span></div>
+        <div class="stat"><b>21:00</b><span>自动备份</span></div>
+      </div>
+    </div>
+    <div class="portrait reveal">
+      <div>
+        <img src="assets/cat.jpg" alt="夜色里招手的三花矮脚猫" loading="eager" />
+        <div class="caption">夜班的搭档</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="flow" class="wrap sep">
+    <div class="reveal">
+      <div class="eyebrow">Flow</div>
+      <h2>四步，<em>一条线走到底</em></h2>
+      <p class="lede" style="margin-top:14px">不堆工具，不建空目录。每一步只为下一步服务。</p>
+    </div>
+
+    <div class="grid">
+      <article class="card wide reveal">
+        <div class="num">01</div>
+        <div>
+          <h3>收进来，别急着分类</h3>
+          <p>手机上刷到的、书里抄下的、脑子里闪的，全部先落进一个地方。分类是晚上的事——白天只管不丢。这一条决定了整套系统会不会死：任何需要「先想清楚放哪」的设计，最后都会让你不想记。</p>
+        </div>
+      </article>
+      <article class="card reveal">
+        <div class="num">02</div>
+        <h3>理清楚</h3>
+        <p>一张卡片只放一个观点，必须用自己的话。写得出来才算看懂，写不出来就还是摘抄。卡片的标题本身就是结论。</p>
+      </article>
+      <article class="card reveal">
+        <div class="num">03</div>
+        <h3>写出去</h3>
+        <p>卡片连成地图，地图长成选题，选题变成稿子。素材不是摆着看的，攒够三张就该往外长一次。</p>
+      </article>
+      <article class="card reveal">
+        <div class="num">04</div>
+        <h3>让它自己跑</h3>
+        <p>每天自动备份；新素材进来自动分类；说一句「继续」，它接着上次的进度。人不盯着，它也在往前走。</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="climax" id="climax">
+    <p>工具会换，<br>判断力不会。</p>
+    <small>the only durable asset</small>
+  </section>
+
+  <section id="plan" class="wrap sep">
+    <div class="reveal">
+      <div class="eyebrow">Roadmap</div>
+      <h2>七周，<em>从空库到一个能讲的作品</em></h2>
+    </div>
+    <div class="timeline">
+      <div class="row done reveal"><time>Week 0 · 已完成</time><p>建库、写契约、装技能、连 GitHub。备份跑起来了。</p></div>
+      <div class="row reveal"><time>Week 1 · 进行中</time><p>只练一件事：东西进收件箱，晚上清一次。</p></div>
+      <div class="row reveal"><time>Week 2</time><p>一周一个来源，八张卡片，一张地图。</p></div>
+      <div class="row reveal"><time>Week 3</time><p>让 AI 干活：自己的技能、定时提醒。</p></div>
+      <div class="row reveal"><time>Week 4</time><p>第一个每天自己跑起来的流程。</p></div>
+      <div class="row reveal"><time>Week 5–7</time><p>小项目、写「我是怎么搭的」、录一遍演示。</p></div>
+    </div>
+  </section>
+
+  <section class="closing wrap" id="end">
+    <div class="reveal">
+      <h2>不是为了炫技</h2>
+      <p>这套东西只是想让我每天少花一点力气在「整理」上，多花一点在「想清楚」上。深夜的屏幕很安静，适合想事情。</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>用 DeepSeek Harness + Obsidian 搭建</span>
+  <span>2026 · 个人项目</span>
+</footer>
+
+<script>
+document.body.classList.add("js");
+const nav=document.getElementById('nav');
+addEventListener('scroll',()=>nav.classList.toggle('solid',scrollY>40),{passive:true});
+
+const io=new IntersectionObserver(es=>{
+  es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});
+},{threshold:.12,rootMargin:'0px 0px -6% 0px'});
+document.querySelectorAll('.reveal').forEach((el,i)=>{el.style.transitionDelay=(i%3)*80+'ms';io.observe(el);});
+
+const climax=document.getElementById('climax');
+new IntersectionObserver(es=>{es.forEach(e=>climax.classList.toggle('in',e.isIntersecting));},{threshold:.45}).observe(climax);
+
+const light=document.getElementById('light');
+let raf=null;
+addEventListener('mousemove',e=>{
+  if(raf)return;
+  raf=requestAnimationFrame(()=>{light.style.left=e.clientX+'px';light.style.top=e.clientY+'px';raf=null;});
+},{passive:true});
+
+document.querySelectorAll('.card').forEach(c=>{
+  c.addEventListener('mousemove',e=>{
+    const r=c.getBoundingClientRect();
+    c.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');
+    c.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');
+  },{passive:true});
+});
+</script>
+</body>
+</html>
