@@ -36,10 +36,21 @@
   .noise{position:fixed;inset:0;z-index:-2;pointer-events:none;opacity:.045;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
   }
-  .light{position:fixed;width:640px;height:640px;border-radius:50%;pointer-events:none;z-index:0;
-    background:radial-gradient(circle,rgba(232,169,131,.20) 0%,rgba(232,169,131,.07) 42%,transparent 70%);
-    transform:translate(-50%,-50%);opacity:0;transition:opacity .8s;mix-blend-mode:screen;filter:blur(6px)}
-  @media(hover:hover){.light{opacity:1}}
+  /* 三层视差光晕：远景雾 / 近景暖核 / 亮点 */
+  #g1,#g2,#g3{position:fixed;left:0;top:0;border-radius:50%;pointer-events:none;z-index:0;
+    transform:translate(-50%,-50%);will-change:transform;opacity:0;transition:opacity 1s var(--ease)}
+  #g1{width:820px;height:820px;
+    background:radial-gradient(circle,rgba(232,169,131,.13) 0%,rgba(73,50,85,.12) 40%,transparent 72%);
+    filter:blur(46px)}
+  #g2{width:320px;height:320px;
+    background:radial-gradient(circle,rgba(244,208,174,.26) 0%,rgba(232,169,131,.12) 45%,transparent 70%);
+    filter:blur(12px);mix-blend-mode:screen;transition:opacity 1s var(--ease),transform .35s var(--ease),width .45s var(--ease),height .45s var(--ease)}
+  #g3{width:7px;height:7px;background:#ffeede;mix-blend-mode:screen;
+    box-shadow:0 0 14px 4px rgba(232,169,131,.85),0 0 46px 14px rgba(232,169,131,.30)}
+  #g2.hot{width:420px;height:420px}
+  @media(hover:hover){#g1,#g2,#g3{opacity:1}}
+  @media(hover:none),(pointer:coarse){#g1,#g2,#g3{display:none}}
+  @media(prefers-reduced-motion:reduce){#g2{transition:none}}
 
   /* 焦点可见 —— 上一版漏掉的硬伤 */
   a:focus-visible,button:focus-visible{outline:2px solid var(--amber);outline-offset:4px;border-radius:4px}
@@ -171,7 +182,7 @@
 <body>
 <div class="sky"></div>
 <div class="noise"></div>
-<div class="light" id="light"></div>
+<div id="g1"></div><div id="g2"></div><div id="g3"></div>
 
 <nav id="nav">
   <div class="brand"><i></i>随心 · 工作站</div>
@@ -357,16 +368,23 @@ document.querySelectorAll('.reveal').forEach((el,i)=>{el.style.transitionDelay=(
 const climax=document.getElementById('climax');
 new IntersectionObserver(es=>{es.forEach(e=>climax.classList.toggle('in',e.isIntersecting));},{threshold:.45}).observe(climax);
 
-const light=document.getElementById('light');
-let tx=-999,ty=-999,cx=-999,cy=-999;
-addEventListener('mousemove',e=>{tx=e.clientX;ty=e.clientY;},{passive:true});
-(function follow(){
-  if(tx>-900){
-    cx+= (tx-cx)*0.12; cy+= (ty-cy)*0.12;
-    light.style.transform='translate(-50%,-50%) translate('+cx+'px,'+cy+'px)';
+const g1=document.getElementById('g1'), g2=document.getElementById('g2'), g3=document.getElementById('g3');
+let mx=-999,my=-999;
+let p1={x:-999,y:-999}, p2={x:-999,y:-999}, p3={x:-999,y:-999};
+addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;},{passive:true});
+(function glowLoop(){
+  if(mx>-900){
+    p1.x+=(mx-p1.x)*0.045; p1.y+=(my-p1.y)*0.045;   // 远景雾，最慢
+    p2.x+=(mx-p2.x)*0.13;  p2.y+=(my-p2.y)*0.13;    // 暖核，中速
+    p3.x+=(mx-p3.x)*0.38;  p3.y+=(my-p3.y)*0.38;    // 亮点，跟手
+    g1.style.transform='translate(-50%,-50%) translate('+p1.x+'px,'+p1.y+'px)';
+    g2.style.transform='translate(-50%,-50%) translate('+p2.x+'px,'+p2.y+'px)';
+    g3.style.transform='translate(-50%,-50%) translate('+p3.x+'px,'+p3.y+'px)';
   }
-  requestAnimationFrame(follow);
+  requestAnimationFrame(glowLoop);
 })();
+addEventListener('mouseover',e=>{ if(e.target.closest('a,button,.card,.p-item')) g2.classList.add('hot'); },{passive:true});
+addEventListener('mouseout',e=>{ if(e.target.closest('a,button,.card,.p-item')) g2.classList.remove('hot'); },{passive:true});
 
 document.querySelectorAll('.card').forEach(c=>{
   c.addEventListener('mousemove',e=>{
