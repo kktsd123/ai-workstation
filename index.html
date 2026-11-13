@@ -154,8 +154,10 @@
   .p-artist{font-size:10.5px;color:var(--ink-dim);letter-spacing:.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .p-min{all:unset;cursor:pointer;width:22px;height:22px;display:grid;place-items:center;color:var(--ink-dim);font-size:14px;border-radius:50%}
   .p-min:hover{color:var(--cream)}
-  .p-bar{height:3px;border-radius:3px;background:rgba(255,255,255,.09);margin:8px 0 10px;overflow:hidden}
-  .p-fill{height:100%;width:0;background:linear-gradient(90deg,var(--cream),var(--amber));border-radius:3px}
+  .p-bar{height:3px;border-radius:3px;background:rgba(255,255,255,.09);margin:8px 0 10px;
+    cursor:pointer;position:relative;touch-action:none}
+  .p-bar::before{content:'';position:absolute;left:0;right:0;top:-15px;bottom:-15px;z-index:1}
+  .p-fill{height:100%;width:0;background:linear-gradient(90deg,var(--cream),var(--amber));border-radius:3px;pointer-events:none}
   .p-ctrl{display:flex;align-items:center;gap:12px}
   .p-btn{all:unset;cursor:pointer;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;color:var(--ink);transition:background .3s,color .3s}
   .p-btn:hover{background:rgba(232,169,131,.12);color:var(--cream)}
@@ -192,6 +194,21 @@
     .portrait img{animation:none}
     .climax p{transition:none;color:rgba(244,208,174,.94);-webkit-text-stroke-color:transparent}
     html{scroll-behavior:auto}
+  }
+  /* ---------- 手机端适配 ---------- */
+  @media(max-width:680px){
+    .player{left:10px;right:10px;bottom:10px;width:auto;padding:15px 16px 13px;border-radius:16px}
+    .player.collapsed{left:auto;right:10px;width:52px;height:52px}
+    .p-title{font-size:15px}
+    .p-artist{font-size:11px}
+    .p-bar{margin:13px 0 15px;height:4px}
+    .p-ctrl{gap:10px}
+    .p-btn{width:36px;height:36px}
+    .p-play{width:44px;height:44px;font-size:16px}
+    .p-vol{display:none}
+    .p-list{max-height:34vh}
+    .p-item{font-size:13.5px;padding:10px 6px}
+    body{padding-bottom:170px}
   }
 </style>
 </head>
@@ -378,8 +395,22 @@
   au.addEventListener('ended',()=>next(1));
   au.addEventListener('play',()=>elPlay.textContent='⏸');
   au.addEventListener('pause',()=>elPlay.textContent='▶');
+  // 进度条：点一下跳到那个位置，也可以按住拖（鼠标和手指都管用）
+  function seekTo(clientX){
+    const rect = elBar.getBoundingClientRect();
+    if(!rect.width) return;
+    let pct = (clientX - rect.left) / rect.width;
+    pct = Math.min(1, Math.max(0, pct));
+    if(au.duration) au.currentTime = pct * au.duration;
+  }
+  let dragging = false;
+  elBar.addEventListener('pointerdown', e => { dragging = true; seekTo(e.clientX); e.preventDefault(); });
+  window.addEventListener('pointermove', e => { if(dragging){ seekTo(e.clientX); e.preventDefault(); } });
+  window.addEventListener('pointerup', () => { dragging = false; });
+  window.addEventListener('pointercancel', () => { dragging = false; });
+
   au.addEventListener('timeupdate',()=>{
-    if(au.duration) elFill.style.width=(au.currentTime/au.duration*100)+'%';
+    if(au.duration && !dragging) elFill.style.width=(au.currentTime/au.duration*100)+'%';
   });
   elVol.addEventListener('input',()=>{
     au.volume=elVol.value/100;
