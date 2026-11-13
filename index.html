@@ -506,55 +506,64 @@ const climax=document.getElementById('climax');
 new IntersectionObserver(es=>{es.forEach(e=>climax.classList.toggle('in',e.isIntersecting));},{threshold:.45}).observe(climax);
 
 const g1=document.getElementById('g1'), g2=document.getElementById('g2'), g3=document.getElementById('g3');
+/* 手机上没有鼠标，跟随光点和拖尾都没意义，还费电，整个关掉 */
+const hasMouse = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 let mx=innerWidth/2, my=innerHeight/2;
 let fx=mx, fy=my;           // 雾：轻微惯性
 let ax=mx, ay=my;           // 雾另一层
 
-// 拖尾：14 个点，每个追前一个
-const TRAIL=14;
-const td=[];
-for(let i=0;i<TRAIL;i++){
-  const d=document.createElement('div');
-  d.className='td';
-  const k=1-i/TRAIL;
-  d.style.width=(3.6*k+1.2)+'px';
-  d.style.height=(3.6*k+1.2)+'px';
-  d.style.opacity=(0.55*k).toFixed(2);
-  document.body.appendChild(d);
-  td.push({el:d,x:mx,y:my});
-}
-
-addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;},{passive:true});
-
-(function glowLoop(){
-  // 雾：轻微跟随（仍然“在鼠标周围”，只是略带惯性）
-  fx+=(mx-fx)*0.22; fy+=(my-fy)*0.22;
-  // 暖核与亮点：紧跟鼠标，始终贴着
-  ax+=(mx-ax)*0.55; ay+=(my-ay)*0.55;
-  g1.style.transform='translate(-50%,-50%) translate('+fx+'px,'+fy+'px)';
-  g2.style.transform='translate(-50%,-50%) translate('+mx+'px,'+my+'px)';
-  g3.style.transform='translate(-50%,-50%) translate('+mx+'px,'+my+'px)';
-
-  // 拖尾链：第 i 点追第 i-1 点
-  let px=mx, py=my;
-  for(let i=0;i<td.length;i++){
-    const p=td[i];
-    p.x+=(px-p.x)*0.42; p.y+=(py-p.y)*0.42;
-    p.el.style.transform='translate(-50%,-50%) translate('+p.x+'px,'+p.y+'px)';
-    px=p.x; py=p.y;
+if(hasMouse){
+  // 拖尾：14 个点，每个追前一个
+  const TRAIL=14;
+  const td=[];
+  for(let i=0;i<TRAIL;i++){
+    const d=document.createElement('div');
+    d.className='td';
+    const k=1-i/TRAIL;
+    d.style.width=(3.6*k+1.2)+'px';
+    d.style.height=(3.6*k+1.2)+'px';
+    d.style.opacity=(0.55*k).toFixed(2);
+    document.body.appendChild(d);
+    td.push({el:d,x:mx,y:my});
   }
-  requestAnimationFrame(glowLoop);
-})();
-addEventListener('mouseover',e=>{ if(e.target.closest('a,button,.card,.p-item')) g2.classList.add('hot'); },{passive:true});
-addEventListener('mouseout',e=>{ if(e.target.closest('a,button,.card,.p-item')) g2.classList.remove('hot'); },{passive:true});
 
-document.querySelectorAll('.card').forEach(c=>{
-  c.addEventListener('mousemove',e=>{
-    const r=c.getBoundingClientRect();
-    c.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');
-    c.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');
-  },{passive:true});
-});
+  addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;},{passive:true});
+
+  (function glowLoop(){
+    // 雾：轻微跟随（仍然“在鼠标周围”，只是略带惯性）
+    fx+=(mx-fx)*0.22; fy+=(my-fy)*0.22;
+    // 暖核与亮点：紧跟鼠标，始终贴着
+    ax+=(mx-ax)*0.55; ay+=(my-ay)*0.55;
+    g1.style.transform='translate(-50%,-50%) translate('+fx+'px,'+fy+'px)';
+    g2.style.transform='translate(-50%,-50%) translate('+mx+'px,'+my+'px)';
+    g3.style.transform='translate(-50%,-50%) translate('+mx+'px,'+my+'px)';
+
+    // 拖尾链：第 i 点追第 i-1 点
+    let px=mx, py=my;
+    for(let i=0;i<td.length;i++){
+      const p=td[i];
+      p.x+=(px-p.x)*0.42; p.y+=(py-p.y)*0.42;
+      p.el.style.transform='translate(-50%,-50%) translate('+p.x+'px,'+p.y+'px)';
+      px=p.x; py=p.y;
+    }
+    requestAnimationFrame(glowLoop);
+  })();
+  addEventListener('mouseover',e=>{ if(e.target.closest('a,button,.card,.p-item')) g2.classList.add('hot'); },{passive:true});
+  addEventListener('mouseout',e=>{ if(e.target.closest('a,button,.card,.p-item')) g2.classList.remove('hot'); },{passive:true});
+
+  document.querySelectorAll('.card').forEach(c=>{
+    c.addEventListener('mousemove',e=>{
+      const r=c.getBoundingClientRect();
+      c.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');
+      c.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');
+    },{passive:true});
+  });
+}else{
+  /* 触摸设备：只留静态光晕，不跑任何跟随动画 */
+  g3.style.display='none';
+  g1.style.transform='translate(-50%,-50%) translate('+mx+'px,'+my+'px)';
+  g2.style.transform='translate(-50%,-50%) translate('+mx+'px,'+my+'px)';
+}
 document.body.classList.add("js");
 </script>
 
