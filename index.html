@@ -36,9 +36,9 @@
   .noise{position:fixed;inset:0;z-index:-2;pointer-events:none;opacity:.045;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
   }
-  .light{position:fixed;width:560px;height:560px;border-radius:50%;pointer-events:none;z-index:-1;
-    background:radial-gradient(circle,rgba(232,169,131,.09),transparent 64%);
-    transform:translate(-50%,-50%);opacity:0;transition:opacity .8s}
+  .light{position:fixed;width:640px;height:640px;border-radius:50%;pointer-events:none;z-index:0;
+    background:radial-gradient(circle,rgba(232,169,131,.20) 0%,rgba(232,169,131,.07) 42%,transparent 70%);
+    transform:translate(-50%,-50%);opacity:0;transition:opacity .8s;mix-blend-mode:screen;filter:blur(6px)}
   @media(hover:hover){.light{opacity:1}}
 
   /* 焦点可见 —— 上一版漏掉的硬伤 */
@@ -358,11 +358,15 @@ const climax=document.getElementById('climax');
 new IntersectionObserver(es=>{es.forEach(e=>climax.classList.toggle('in',e.isIntersecting));},{threshold:.45}).observe(climax);
 
 const light=document.getElementById('light');
-let raf=null;
-addEventListener('mousemove',e=>{
-  if(raf)return;
-  raf=requestAnimationFrame(()=>{light.style.left=e.clientX+'px';light.style.top=e.clientY+'px';raf=null;});
-},{passive:true});
+let tx=-999,ty=-999,cx=-999,cy=-999;
+addEventListener('mousemove',e=>{tx=e.clientX;ty=e.clientY;},{passive:true});
+(function follow(){
+  if(tx>-900){
+    cx+= (tx-cx)*0.12; cy+= (ty-cy)*0.12;
+    light.style.transform='translate(-50%,-50%) translate('+cx+'px,'+cy+'px)';
+  }
+  requestAnimationFrame(follow);
+})();
 
 document.querySelectorAll('.card').forEach(c=>{
   c.addEventListener('mousemove',e=>{
